@@ -1,6 +1,5 @@
-from sqlalchemy import String
+from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
-
 from app.db.base import Base
 
 class TestPrice(Base):
@@ -8,9 +7,14 @@ class TestPrice(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
 
-    lab_id: Mapped[int]
-    test_id: Mapped[int]
+    lab_id: Mapped[int] = mapped_column(
+        ForeignKey("Lab.id")
+    )
 
-    price: Mapped[float]
+    test_id: Mapped[int] = mapped_column(
+        ForeignKey("MedicalTest.id")
+    )
 
-    description: Mapped[str] = mapped_column(String(100))
+    price: Mapped[float] = mapped_column()
+
+    description: Mapped[str] = mapped_column(nullable=True)
