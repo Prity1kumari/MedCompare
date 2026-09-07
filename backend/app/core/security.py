@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 import os
-from jose import jwt
+from jose import jwt, JWTError
+from fastapi import HTTPException, status
 
 from passlib.context import CryptContext
 
@@ -13,6 +14,12 @@ load_dotenv()
 SECRET_KEY=os.getenv("SECRET_KEY")
 ALGORITHM=os.getenv("ALGORITHM")
 EXPIRATION_TIME_MINUTES=int(os.getenv("EXPIRATION_TIME_MINUTES"))
+
+import bcrypt
+if not hasattr(bcrypt, "__about__"):
+    class _About:
+        __version__ = getattr(bcrypt, "__version__", "4.0.0")
+    bcrypt.__about__ = _About()
 
 pwd_context=CryptContext(
     schemes=["bcrypt"],
@@ -36,3 +43,20 @@ def create_access_token(data:dict):
         SECRET_KEY,
         algorithm=ALGORITHM
     )
+
+
+def verify_token(token: str) -> str:
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id: str = payload.get("sub")
+        if user_id is None:
+            raise credentials_exception
+        return user_id
+    except JWTError:
+        raise credentials_exception
+

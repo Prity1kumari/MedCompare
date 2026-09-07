@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from fastapi import Depends,HTTPException,APIRouter
+from fastapi import Depends, HTTPException, APIRouter, Request
 from app.db.session import get_db
 from app.models.user import User
 from app.schemas.user import UserCreate,UserLogin
@@ -53,30 +53,55 @@ def register(user:UserCreate,db:Session=Depends(get_db)):
 
 
 @router.post("/login")
-def login(user:UserLogin,db:Session=Depends(get_db)):
+async def login(
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    content_type = request.headers.get("content-type", "")
+    email = None
+    password = None
 
-    db_user=db.query(User).filter(
-        User.email==user.email
+    if "application/x-www-form-urlencoded" in content_type:
+        form = await request.form()
+        email = form.get("username")
+        password = form.get("password")
+    else:
+        try:
+            body = await request.json()
+            email = body.get("email")
+            password = body.get("password")
+        except Exception:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid request body"
+            )
+
+    if not email or not password:
+        raise HTTPException(
+            status_code=400,
+            detail="Email and password are required"
+        )
+
+    db_user = db.query(User).filter(
+        User.email == email
     ).first()
 
-    if not db_user:
+    if not db_user or not verify_password(password, db_user.password_hash):
         raise HTTPException(
             status_code=401,
-            detail="Invalid email or password"
+            detail="Invalid email or password",
+            headers={"WWW-Authenticate": "Bearer"},
         )
-    if not verify_password(user.password,db_user.password_hash):
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid email or password"
-        )
-    token=create_access_token({
-        "sub":str(db_user.id)
+
+    token = create_access_token({
+        "sub": str(db_user.id)
     })
 
     return {
-        "access_token":token,
-        "token_type":"bearer"
+        "access_token": token,
+        "token_type": "bearer"
     }
+
 
     
 

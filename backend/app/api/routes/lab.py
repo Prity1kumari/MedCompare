@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.models.lab import Lab
-from app.schemas.lab import LabCreate
+from app.schemas.lab import LabCreate, LabResponse
 
 
 router=APIRouter(
@@ -39,6 +39,12 @@ def create_lab(
 def get_labs(db:Session=Depends(get_db)):
 
     return db.query(Lab).all()
+
+
+
+@router.get("/top-rated", response_model=list[LabResponse])
+def get_top_rated_labs(db: Session = Depends(get_db)):
+    return db.query(Lab).order_by(Lab.rating.desc()).limit(10).all()
 
 
 

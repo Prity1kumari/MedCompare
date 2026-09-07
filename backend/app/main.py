@@ -13,6 +13,10 @@ from app.api.routes.test_price import router as test_price_router
 from app.api.routes.lab_slots import router as Lab_slot_router
 
 from app.api.routes.appointments import router as appointment_router
+from app.api.routes.dashboard import router as dashboard_router
+from app.api.routes.payment import router as payment_router
+from app.api.routes.review import router as review_router
+from app.api.routes.search import router as search_router
 
 
 
@@ -27,6 +31,11 @@ app.include_router(medical_test_router)
 app.include_router(test_price_router)
 app.include_router(Lab_slot_router)
 app.include_router(appointment_router)
+app.include_router(dashboard_router)
+app.include_router(payment_router)
+app.include_router(review_router)
+app.include_router(search_router)
+
 
 
 @app.get("/")
