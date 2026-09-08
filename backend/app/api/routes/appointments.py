@@ -24,13 +24,13 @@ def create_appointment(
       LabSlot.id==appointment.slot_id
    ).first()
    if not slot:
-       raise HTTpException(
+       raise HTTPException(
            status_code=404,
-           details="Slot not found"
+           detail="Slot not found"
        )
 
    if slot.is_booked:
-       raise HTTpException(
+       raise HTTPException(
            status_code=400,
            detail="Slot is already booked"
        )
@@ -77,15 +77,14 @@ def cancel_appointment(
 
 
     if not appointment:
-        raise HTTpException(
+        raise HTTPException(
             status_code=404,
             detail="Appointment not found"
         )
 
-
-    slot=db.query(labSlot).filter(
-        LabSlot.id==appointment.slot_id
-    ).fisrt()
+    slot = db.query(LabSlot).filter(
+        LabSlot.id == appointment.slot_id
+    ).first()
 
     if slot:
         slot.is_booked=False

@@ -41,7 +41,7 @@ def get_price(db:Session=Depends(get_db)):
 
 @router.get("/{price_id}")
 def get_price_by_id(
-    priceId:int,
+    price_id:int,
     db:Session=Depends(get_db)
 ):
 
@@ -72,7 +72,7 @@ def delete_price(
 
 
     if not price:
-        raise HTPException(
+        raise HTTPException(
             status_code=404,
             detail="price not found"
         )
