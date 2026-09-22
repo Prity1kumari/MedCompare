@@ -16,6 +16,8 @@ import Reviews from "./pages/Reviews";
 import History from "./pages/History";
 import NotFound from "./pages/NotFound";
 
+import LabDetails from "./pages/LabDetails";
+
 // Home Landing Component incorporating HeroSection and trust highlights
 const HomePage = () => {
   const { isAuthenticated } = useAuth();
@@ -48,13 +50,23 @@ function AppRoutes() {
           }
         />
         <Route
-          path="/labs"
-          element={
-            <ProtectedRoute>
-              <Labs />
-            </ProtectedRoute>
-          }
-        />
+  path="/labs"
+  element={
+    <ProtectedRoute>
+      <Labs />
+    </ProtectedRoute>
+  }
+/>
+
+<Route
+  path="/labs/:id"
+  element={
+    <ProtectedRoute>
+      <LabDetails />
+    </ProtectedRoute>
+  }
+/>
+        
         <Route
           path="/compare"
           element={

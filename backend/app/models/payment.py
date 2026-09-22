@@ -11,4 +11,18 @@ class Payment(Base):
     appointment_id: Mapped[int]
 
     amount: Mapped[float]
-    payment_status: Mapped[str] = mapped_column(String(50))
+
+    razorpay_order_id:Mapped[str| None]=mapped_column(String(255),
+                                                           nullable=True)
+
+
+    razorpay_payment_id:Mapped[str|None]=mapped_column(
+        String(255),
+        nullable=True
+    )
+    payment_status: Mapped[str] = mapped_column(String(50),
+
+      default="pending"  )                                          
+                                                
+                                                
+                                                

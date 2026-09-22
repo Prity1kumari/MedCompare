@@ -5,9 +5,23 @@ from app.db.session import get_db
 from app.models.payment import Payment
 from app.schemas.payment import PaymentCreate, PaymentResponse
 
+from app.schemas.razorpay import CreateOrderRequest
+
+import os
+
+import razorpay
+
+
 router = APIRouter(
     prefix="/payment",
     tags=["Payments"]
+)
+
+client=razorpay.Client(
+    auth=(
+        os.getenv("RAZORPAY_KEY_ID"),
+        os.getenv("RAZORPAY_KEY_SECRET")
+    )
 )
 
 
@@ -49,3 +63,33 @@ def get_payment(
             detail="Payment not found"
         )
     return payment
+
+
+
+@router.post("/create-order")
+def create_order(
+    data:CreateOrderRequest,
+    db:Session=Depends(get_db)
+):
+
+    order=client.order.create({
+        "amount":int(data.amount*100),
+        "currency":"INR"
+    })
+
+    payment=Payment(
+        user_id=data.user_id,
+        appointment_id=data.appointment_id,
+        amount=data.amount,
+        payment_status="pending",
+        razorpay_order_id=order["id"]
+    )
+
+    db.add(payment)
+    db.commit()
+
+    return {
+        "order_id":order["id"],
+        "amount":data.amount,
+        "key":os.getenv("RAZORPAY_KEY_ID")
+    }

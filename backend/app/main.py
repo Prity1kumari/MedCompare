@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from dotenv import load_dotenv
 
+load_dotenv()
+
 from app.api.routes.auth import router as auth_router
 
 from app.api.routes.lab import router as lab_router
@@ -17,6 +19,8 @@ from app.api.routes.dashboard import router as dashboard_router
 from app.api.routes.payment import router as payment_router
 from app.api.routes.review import router as review_router
 from app.api.routes.search import router as search_router
+
+from app.api.routes.slots import router as slots_router
 from fastapi.middleware.cors import CORSMiddleware
 
 
