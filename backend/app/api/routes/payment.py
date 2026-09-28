@@ -1,3 +1,9 @@
+import os
+
+import razorpay
+
+
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -7,9 +13,9 @@ from app.schemas.payment import PaymentCreate, PaymentResponse
 
 from app.schemas.razorpay import CreateOrderRequest
 
-import os
+from app.schemas.payment_verify import VerifyPaymentRequest
 
-import razorpay
+
 
 
 router = APIRouter(
@@ -49,6 +55,19 @@ def get_all_payments(
     db: Session = Depends(get_db)
 ):
     return db.query(Payment).all()
+
+
+
+@router.get("/test-razorpay")
+def test_razorpay():
+    return {
+        "key": os.getenv("RAZORPAY_KEY_ID"),
+        "secret_exists": os.getenv("RAZORPAY_KEY_SECRET") is not None
+    }
+
+
+
+
 
 
 @router.get("/{payment_id}", response_model=PaymentResponse)
@@ -93,3 +112,59 @@ def create_order(
         "amount":data.amount,
         "key":os.getenv("RAZORPAY_KEY_ID")
     }
+
+
+
+@router.post("/verify")
+def verify_payment(
+    data:VerifyPaymentRequest,
+    db:Session=Depends(get_db)
+):
+
+    try:
+
+        client.utility.verify_payment_signature(
+            {
+                "razorpay_order_id":data.razorpay_order_id,
+
+                "razorpay_payment_id":data.razorpay_payment_id,
+
+                "razorpay_signature":data.razorpay_signature
+            }
+        )
+
+
+        payment=db.query(Payment).filter(
+            Payment.razorpay_order_id==data.razorpay_order_id
+        ).first()
+
+
+        if not payment:
+
+            raise HTTPException(
+                status_code=401,
+                detail="payment not found"
+            )
+
+
+        payment.payment_status="paid"
+
+        payment.razorpay_payment_id=(
+            data.razorpay_payment_id
+        )
+
+        db.commit()
+
+        return {
+            "message":"payment verified successfully"
+        }
+
+
+    except Exception:
+
+        raise HTTPException(
+            status_code=400,
+            detail="Payment verification failed"
+        )
+
+

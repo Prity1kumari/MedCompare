@@ -9,3 +9,6 @@ passlib[bcrypt]
 python-multipart 
 python-dotenv 
 pydantic-settings
+razorpay
+email-validator
+

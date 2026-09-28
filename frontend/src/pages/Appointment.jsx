@@ -108,33 +108,143 @@ const Appointment = () => {
     fetchSlots();
   }, [selectedLabId]);
 
+
+  const loadRazorpay = () => {
+  return new Promise((resolve) => {
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+
+    script.onload = () => {
+      resolve(true);
+    };
+
+    script.onerror = () => {
+      resolve(false);
+    };
+
+    document.body.appendChild(script);
+  });
+};
+
   // Book appointment submission
   const handleBookSubmit = async (e) => {
-    e.preventDefault();
-    if (!selectedSlotId) {
-      toast.warning("Please choose an appointment slot.");
-      return;
-    }
+  e.preventDefault();
 
-    try {
-      setIsSubmitting(true);
-      const res = await api.post("/appointments/book", {
+  if (!selectedSlotId) {
+    toast.warning("Please choose an appointment slot.");
+    return;
+  }
+
+  try {
+    setIsSubmitting(true);
+
+    // Step 1: Book Appointment
+    const appointmentRes = await api.post(
+      "/appointments/book",
+      {
         user_id: user?.id || 1,
         slot_id: parseInt(selectedSlotId),
-      });
+      }
+    );
 
-      toast.success("Appointment booked successfully! Slot confirmed.");
-      setShowBookingModal(false);
-      setSelectedSlotId("");
-      fetchData();
-    } catch (err) {
-      console.error("Booking error:", err);
-      const msg = err.response?.data?.detail || "Could not book appointment. Please choose another slot.";
-      toast.error(msg);
-    } finally {
-      setIsSubmitting(false);
+    const appointmentId =
+      appointmentRes.data.appointment_id;
+
+    // Step 2: Create Razorpay Order
+    const orderRes = await api.post(
+  "/payment/create-order",
+  {
+    user_id: user?.id || 1,
+    appointment_id: appointmentId,
+    amount: 299,
+  }
+);
+
+const razorpayLoaded =
+  await loadRazorpay();
+
+if (!razorpayLoaded) {
+  toast.error("Razorpay failed to load");
+  return;
+}
+
+const options = {
+  key: orderRes.data.key,
+
+  amount: orderRes.data.amount * 100,
+
+  currency: "INR",
+
+  name: "MedCompare",
+
+  description: "Lab Test Appointment",
+
+  order_id: orderRes.data.order_id,
+
+  handler: async function(response){
+
+  await api.post(
+    "/payment/verify",
+    {
+      razorpay_payment_id:
+        response.razorpay_payment_id,
+
+      razorpay_order_id:
+        response.razorpay_order_id,
+
+      razorpay_signature:
+        response.razorpay_signature,
     }
-  };
+  );
+
+  toast.success(
+    "Payment Verified Successfully!"
+  );
+
+  setShowBookingModal(false);
+
+  setSelectedSlotId("");
+
+  fetchData();
+},
+
+  prefill: {
+    name: user?.name || "",
+    email: user?.email || "",
+  },
+
+  theme: {
+    color: "#2563eb",
+  },
+};
+
+const razorpay =
+  new window.Razorpay(options);
+
+razorpay.open();
+
+      
+
+    const paymentObject =
+      new window.Razorpay(options);
+
+    paymentObject.open();
+
+  } catch (err) {
+    console.error(
+      "Booking error:",
+      err
+    );
+
+    const msg =
+      err.response?.data?.detail ||
+      "Booking failed";
+
+    toast.error(msg);
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   // Cancel appointment
   const handleCancelAppointment = async (appointmentId) => {

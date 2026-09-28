@@ -18,6 +18,7 @@ import NotFound from "./pages/NotFound";
 
 import LabDetails from "./pages/LabDetails";
 
+
 // Home Landing Component incorporating HeroSection and trust highlights
 const HomePage = () => {
   const { isAuthenticated } = useAuth();
